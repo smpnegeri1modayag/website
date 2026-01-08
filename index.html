@@ -1,0 +1,1723 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Website Sekolah</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary-color: #004aad; /* Biru Teladan yg lebih gelap */
+            --accent-color: #ffd700; /* Kuning Emas dikit */
+            --text-light: #f8f9fa;
+            --text-dark: #333;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f6f9;
+            color: var(--text-dark);
+            overflow-x: hidden; /* Hilangkan scroll samping */
+        }
+
+        /* --- 1. NAVBAR TRANSPARAN (CLEAN LOOK) --- */
+        .navbar-public {
+            background-color: transparent !important; /* Transparan */
+            padding-top: 20px; 
+            padding-bottom: 20px;
+            transition: 0.4s; /* Efek transisi halus */
+            position: fixed; /* Melayang di atas gambar */
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+        }
+        
+        /* Navbar saat di halaman selain Home / saat discroll (Akan diatur JS) */
+        .navbar-solid {
+            background-color: var(--primary-color) !important;
+            padding-top: 10px; padding-bottom: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .navbar-brand { font-weight: 700; font-size: 1.5rem; color: white !important; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
+        .nav-link { 
+            color: rgba(255,255,255,0.9) !important; 
+            font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; font-size: 0.85rem;
+            margin-left: 8px; padding-left: 5px !important; padding-right: 5px !important; position: relative;
+        }
+        .nav-link:hover { color: var(--accent-color) !important; }
+        
+        /* Garis bawah saat hover menu */
+        .nav-link::after {
+            content: ''; position: absolute; width: 0; height: 2px; bottom: 0; left: 0;
+            background-color: var(--accent-color); transition: width 0.3s;
+        }
+        .nav-link:hover::after { width: 100%; }
+
+        /* --- 2. HERO SECTION (FULL SCREEN) --- */
+        .hero-section {
+            height: 100vh; /* Tinggi 100% Layar HP/Laptop */
+            background-color: #222; 
+            background-size: cover; background-position: center; 
+            position: relative;
+            display: flex; align-items: center; justify-content: center;
+            text-align: center; color: white;
+            margin-top: 0; /* Reset margin karena navbar fixed */
+        }
+        .hero-overlay {
+            position: absolute; top:0; left:0; right:0; bottom:0;
+            background: rgba(0,0,0,0.4); /* Gelapkan gambar sedikit biar tulisan terbaca */
+        }
+        .hero-content { position: relative; z-index: 2; max-width: 800px; padding: 20px;}
+        .hero-title { 
+            font-size: 3.5rem; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; 
+            text-shadow: 2px 4px 8px rgba(0,0,0,0.6); margin-bottom: 20px;
+        }
+        
+        /* Search Bar Ala Referensi */
+        .hero-search {
+            background: white; padding: 10px 20px; border-radius: 50px;
+            display: flex; align-items: center; margin-top: 30px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        .hero-search input { border: none; outline: none; width: 100%; padding: 5px; }
+
+        /* --- 3. LOGIKA HALAMAN (PENTING!) --- */
+        /* Semua section kita sembunyikan dulu, kecuali Home */
+        section { display: none; padding-top: 140px !important; padding-bottom: 50px; min-height: 80vh;}
+        #home { display: flex; padding-top: 0 !important; } /* Home tampil beda (full) */
+
+        /* Judul Halaman Lain */
+        .page-title {
+            text-align: center; font-weight: 800; margin-bottom: 40px; text-transform: uppercase;
+            color: var(--primary-color); position: relative; display: inline-block;
+        }
+        .page-header { text-align: center; margin-bottom: 30px; }
+
+        /* CSS Admin & Lainnya tetap sama... */
+        .card { border: none; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); transition: 0.3s; }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        .card-img-top { height: 200px; object-fit: cover; }
+        footer { background: #222; color: white; padding: 40px 0; margin-top: auto;}
+        
+        /* Popup Admin dll */
+        #admin-panel { display: none; background: #f4f6f9; min-height: 100vh; padding-top: 0;}
+        .login-overlay { position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.8); z-index: 10000; display: none; justify-content: center; align-items: center; }
+    </style>
+</head>
+<body>
+
+    <div id="loader">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="mt-2 text-muted fw-bold">Sedang memuat data sekolah...</p>
+    </div>
+
+    <div id="login-modal" class="login-overlay">
+        <div class="card p-4 shadow-lg" style="width: 350px;">
+            <div class="text-center mb-3">
+                <i class="fas fa-user-shield fa-3x text-primary mb-2"></i>
+                <h4 class="fw-bold">Login Guru</h4>
+            </div>
+            <div class="mb-3">
+                <input type="text" id="username" class="form-control" placeholder="Username">
+            </div>
+            <div class="mb-3">
+                <input type="password" id="password" class="form-control" placeholder="Password">
+            </div>
+            <button class="btn btn-primary w-100 fw-bold" onclick="handleLogin()">MASUK</button>
+            <button class="btn btn-link text-secondary w-100 mt-2" onclick="toggleLogin(false)">Kembali</button>
+        </div>
+    </div>
+
+<div class="modal fade" id="formModal" tabindex="-1" style="z-index: 10002;">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalTitle">Form Data</h5>
+                    <button type="button" class="btn-close" onclick="closeForm()"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="dataForm">
+                        <input type="hidden" id="inputId"> <div class="mb-3" id="field-nip" style="display: none;">
+                            <label class="form-label">NIP (Nomor Induk)</label>
+                            <input type="text" class="form-control" id="inputNIP" placeholder="Masukkan NIP">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label" id="label-judul">Judul / Nama</label>
+                            <input type="text" class="form-control" id="inputJudul" required>
+                        </div>
+                        
+                        <div class="mb-3" id="field-jabatan" style="display: none;">
+                            <label class="form-label">Jabatan</label>
+                            <input type="text" class="form-control" id="inputJabatan" placeholder="Contoh: Kepala Lab. TIK">
+                        </div>
+
+                        <div class="mb-3" id="field-kategori"> 
+                            <label class="form-label" id="label-kategori">Kategori</label>
+                            <input type="text" class="form-control" id="inputKategori">
+                        </div>
+
+                        <div class="mb-3" id="field-username" style="display: none;">
+                            <label class="form-label">Username Login (Opsional)</label>
+                            <input type="text" class="form-control" id="inputUsername" placeholder="Username untuk login">
+                        </div>
+
+                        <div class="mb-3" id="field-isi">
+                            <label class="form-label" id="label-isi">Isi Berita / Keterangan</label>
+                            <textarea class="form-control" id="inputIsi" rows="4"></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Link Foto / Video (URL)</label>
+                            <input type="text" class="form-control" id="inputFoto" placeholder="https://...">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeForm()">Batal</button>
+                    <button type="button" class="btn btn-primary" onclick="submitData()">SIMPAN</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="public-view">
+        <nav class="navbar navbar-expand-lg navbar-light navbar-public sticky-top">
+            <div class="container">
+                <a class="navbar-brand fw-bold d-flex align-items-center" href="#" id="nav-brand">
+                    <img id="nav-logo" src="" alt="Logo" class="me-2" style="height: 45px; display: none;">
+                    
+                    <i id="nav-icon" class="fas fa-school me-2"></i>
+                    
+                    <span id="brand-text">Sekolah App</span>
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav ms-auto" id="nav-menu">
+                        </ul>
+                    <button class="btn btn-outline-primary ms-3 btn-sm rounded-pill px-3" onclick="toggleLogin(true)">
+                        <i class="fas fa-lock me-1"></i> Login
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <main>
+            <section id="home" class="hero-section">
+                <div class="hero-overlay"></div>
+                <div class="container hero-content">
+                    <h1 class="hero-title" id="hero-title">SMP NEGERI 1 MODAYAG</h1> <p class="lead mb-4 fs-4" id="hero-desc">Mewujudkan Generasi Cerdas & Berkarakter</p>
+                    
+                    <div class="row justify-content-center">
+                        <div class="col-md-8 col-lg-6">
+                            <div class="hero-search">
+                                <i class="fas fa-search text-muted me-2"></i>
+                                <input type="text" id="searchInput" placeholder="Cari Berita, Guru, atau Kegiatan..." onkeyup="if(event.key === 'Enter') handleSearch()">
+                                <button class="btn btn-primary rounded-pill px-4" onclick="handleSearch()">Cari</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="profil" class="container">
+                <div class="row align-items-center mb-5">
+                    <div class="col-lg-7 order-2 order-lg-1">
+                        <span class="badge bg-primary px-3 py-2 rounded-pill mb-3">SAMBUTAN KEPALA SEKOLAH</span>
+                        <h2 class="fw-bold display-6 mb-4 text-dark">Selamat Datang di Website Resmi Kami</h2>
+                        
+                        <figure class="bg-white p-4 rounded shadow-sm border-start border-5 border-primary">
+                            <blockquote class="blockquote">
+                                <p id="sambutan-sekolah" class="mb-0 text-muted" style="white-space: pre-line; font-size: 1.1rem; line-height: 1.8;">
+                                    "Pendidikan adalah tiket ke masa depan. Hari esok dimiliki oleh orang-orang yang mempersiapkan dirinya pada hari ini."
+                                </p>
+                            </blockquote>
+                            <figcaption class="blockquote-footer mt-3 mb-0 fw-bold text-primary">
+                                <span id="nama-kepsek">Kepala Sekolah</span>
+                            </figcaption>
+                        </figure>
+
+                        <div class="d-flex flex-wrap mt-4 gap-4">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-map-marker-alt text-danger fa-lg me-2"></i>
+                                <small class="text-muted fw-bold" id="alamat-sekolah">-</small>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-phone text-success fa-lg me-2"></i>
+                                <small class="text-muted fw-bold" id="telp-sekolah">-</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-5 order-1 order-lg-2 text-center mb-4 mb-lg-0">
+                        <div class="position-relative d-inline-block">
+                            <img id="foto-kepsek" src="https://via.placeholder.com/400x500" 
+                                 class="img-fluid rounded-4 shadow-lg position-relative" 
+                                 style="width: 100%; max-width: 350px; object-fit: cover; z-index: 2; border: 5px solid white;">
+                            
+                            <div class="position-absolute bottom-0 start-50 translate-middle-x mb-3 bg-white px-4 py-2 rounded-pill shadow-sm" style="z-index: 3; width: 80%;">
+                                <small class="fw-bold text-primary text-uppercase">Kepala Sekolah</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-4 mb-5">
+                    <div class="col-md-6">
+                        <div class="card h-100 border-0 shadow-sm p-4 bg-white hover-effect">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width:50px; height:50px;">
+                                    <i class="fas fa-eye fa-lg"></i>
+                                </div>
+                                <h3 class="fw-bold mb-0">Visi Sekolah</h3>
+                            </div>
+                            <p class="text-muted fst-italic">"Terwujudnya Peserta Didik yang Beriman, Cerdas, Terampil, Mandiri dan Berwawasan Global."</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card h-100 border-0 shadow-sm p-4 bg-white hover-effect">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width:50px; height:50px;">
+                                    <i class="fas fa-bullseye fa-lg"></i>
+                                </div>
+                                <h3 class="fw-bold mb-0">Misi Sekolah</h3>
+                            </div>
+                            <ul class="text-muted ps-3 mb-0 small" style="line-height: 1.8;">
+                                <li>Mewujudkan pendidikan yang adil dan merata.</li>
+                                <li>Meningkatkan mutu lulusan yang berdaya saing.</li>
+                                <li>Menciptakan lingkungan belajar yang kondusif.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-5 mt-5">
+                    <div class="text-center mb-4">
+                        <span class="badge bg-success px-3 py-2 rounded-pill mb-2">SARANA & PRASARANA</span>
+                        <h3 class="fw-bold text-dark">Fasilitas Penunjang</h3>
+                    </div>
+                    
+                    <div class="row g-4" id="fasilitas-container"></div>
+                </div>
+
+                <div class="row text-center py-4 bg-white rounded-4 shadow-sm border mx-1">
+                    <div class="col-4 border-end">
+                        <h2 class="fw-bold text-primary mb-0">A</h2><small class="text-muted fw-bold text-uppercase">Akreditasi</small>
+                    </div>
+                    <div class="col-4 border-end">
+                        <h2 class="fw-bold text-primary mb-0">30+</h2><small class="text-muted fw-bold text-uppercase">Guru & Staff</small>
+                    </div>
+                    <div class="col-4">
+                        <h2 class="fw-bold text-primary mb-0">5+</h2><small class="text-muted fw-bold text-uppercase">Ekstrakurikuler</small>
+                    </div>
+                </div>
+            </section>
+
+            <section id="berita" class="bg-light">
+                <div class="container">
+                    <div class="text-center mb-5">
+                        <span class="badge bg-info text-dark px-3 py-2 rounded-pill mb-2">LITERASI SEKOLAH</span>
+                        <h2 class="text-center fw-bold display-6 text-primary">Berita & Artikel</h2>
+                        <p class="text-muted">Informasi terkini dan tulisan inspiratif dari warga sekolah.</p>
+                    </div>
+
+                    <div class="d-flex justify-content-center mb-4">
+                        <div class="btn-group shadow-sm rounded-pill overflow-hidden" role="group">
+                            <button type="button" class="btn btn-primary px-4 py-2 fw-bold" id="btn-tab-news" onclick="switchBeritaTab('news')">
+                                <i class="fas fa-newspaper me-2"></i> BERITA
+                            </button>
+                            <button type="button" class="btn btn-light px-4 py-2 fw-bold" id="btn-tab-artikel" onclick="switchBeritaTab('artikel')">
+                                <i class="fas fa-pen-nib me-2"></i> ARTIKEL
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="row g-4" id="berita-container"></div>
+
+                    <div class="row g-4" id="artikel-container" style="display: none;"></div>
+                </div>
+            </section>
+
+            <section id="guru" class="bg-white">
+                <div class="container">
+                    <div class="text-center mb-5">
+                        <span class="badge bg-primary px-3 py-2 rounded-pill mb-2">SDM UNGGUL</span>
+                        <h2 class="fw-bold display-6 text-primary">Guru & Tenaga Kependidikan</h2>
+                        <p class="text-muted mx-auto" style="max-width: 600px;">
+                            Pendidik profesional yang berdedikasi tinggi dalam membimbing, mengajar, dan melatih peserta didik menuju masa depan gemilang.
+                        </p>
+                    </div>
+                    <div class="row g-4 justify-content-center" id="guru-container"></div>
+                </div>
+            </section>
+
+            <section id="ekskul" class="bg-light">
+                <div class="container">
+                    <div class="text-center mb-5">
+                        <span class="badge bg-warning text-dark px-3 py-2 rounded-pill mb-2">BAKAT & MINAT</span>
+                        <h2 class="fw-bold display-6 text-primary">Ekstrakurikuler</h2>
+                        <p class="text-muted mx-auto" style="max-width: 600px;">
+                            Wadah bagi siswa untuk mengembangkan potensi, hobi, dan karakter kepemimpinan di luar jam pelajaran akademik.
+                        </p>
+                    </div>
+                    <div class="row g-4" id="ekskul-container"></div>
+                </div>
+            </section>
+
+            <section id="galeri" class="bg-white">
+                <div class="container">
+                    <div class="text-center mb-5">
+                        <span class="badge bg-danger px-3 py-2 rounded-pill mb-2">DOKUMENTASI</span>
+                        <h2 class="fw-bold display-6 text-primary">Galeri Kegiatan</h2>
+                        <p class="text-muted mx-auto" style="max-width: 600px;">
+                            Rekaman lensa dari berbagai aktivitas seru dan momen berharga.
+                        </p>
+                    </div>
+
+                    <div class="d-flex justify-content-center mb-4">
+                        <div class="btn-group shadow-sm rounded-pill overflow-hidden" role="group">
+                            <button type="button" class="btn btn-primary px-4 py-2 fw-bold" id="btn-tab-foto" onclick="switchGaleriTab('foto')">
+                                <i class="fas fa-camera me-2"></i> FOTO
+                            </button>
+                            <button type="button" class="btn btn-light px-4 py-2 fw-bold" id="btn-tab-video" onclick="switchGaleriTab('video')">
+                                <i class="fas fa-play-circle me-2"></i> VIDEO
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="row g-3" id="galeri-foto-container"></div>
+
+                    <div class="row g-3" id="galeri-video-container" style="display: none;"></div>
+                </div>
+            </section>
+
+            <section id="pencarian" class="bg-light" style="min-height: 60vh;">
+                <div class="container">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h3 class="fw-bold text-primary"><i class="fas fa-search me-2"></i> Hasil Pencarian</h3>
+                        <button class="btn btn-outline-secondary rounded-pill btn-sm" onclick="bukaHalaman('home')">
+                            <i class="fas fa-times me-1"></i> Tutup
+                        </button>
+                    </div>
+
+                    <p id="search-feedback" class="text-muted mb-4">Menampilkan hasil pencarian...</p>
+
+                    <div class="row g-4" id="search-results-container"></div>
+                </div>
+            </section>
+
+            <section id="kontak" class="bg-light">
+                <div class="container">
+                    <div class="text-center mb-5">
+                        <span class="badge bg-primary px-3 py-2 rounded-pill mb-2">HUBUNGI KAMI</span>
+                        <h2 class="fw-bold display-6 text-primary">Kritik, Saran & Informasi</h2>
+                        <p class="text-muted">Kami siap melayani Anda. Silakan hubungi kami melalui jalur berikut.</p>
+                    </div>
+
+                    <div class="row g-4">
+                        <div class="col-lg-5">
+                            <div class="card border-0 shadow-sm h-100 overflow-hidden">
+                                <div class="bg-primary p-4 text-white text-center">
+                                    <i class="fas fa-map-marked-alt fa-3x mb-3"></i>
+                                    <h4 class="fw-bold">Lokasi Sekolah</h4>
+                                </div>
+                                <div class="card-body p-0">
+                                    <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3989.505926121714!2d124.39281217411765!3d0.7169937992760254!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x327e224ae6ef36dd%3A0x5c1a4c0923e22e95!2sSMP%20Negeri%201%20Modayag!5e0!3m2!1sid!2sid!4v1767166679271!5m2!1sid!2sid" width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+                                    
+                                    <div class="p-4">
+                                        <div class="d-flex align-items-center mb-3">
+                                            <i class="fas fa-home text-primary me-3 fa-lg"></i>
+                                            <span>Jl. Trans Sulawesi, Purworejo Tengah, Kec. Modayag</span>
+                                        </div>
+                                        <div class="d-flex align-items-center mb-3">
+                                            <i class="fas fa-envelope text-primary me-3 fa-lg"></i>
+                                            <span>smpnegeri1modayag@gmail.com</span>
+                                        </div>
+                                        <div class="d-flex align-items-center">
+                                            <i class="fas fa-phone text-primary me-3 fa-lg"></i>
+                                            <span>082344099606</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-7">
+                            <div class="card border-0 shadow-sm p-4 p-md-5 h-100">
+                                <h4 class="fw-bold mb-4">Kirim Pesan</h4>
+                                <form id="formKontak" onsubmit="handleKirimPesan(event)">
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label fw-bold">Nama Lengkap</label>
+                                            <input type="text" id="pesanNama" class="form-control bg-light border-0 py-2" placeholder="Nama Anda" required>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label fw-bold">Email / No. HP</label>
+                                            <input type="text" id="pesanKontak" class="form-control bg-light border-0 py-2" placeholder="Kontak Anda" required>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label fw-bold">Subjek</label>
+                                            <input type="text" id="pesanSubjek" class="form-control bg-light border-0 py-2" placeholder="Tujuan pesan..." required>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label fw-bold">Isi Pesan</label>
+                                            <textarea id="pesanIsi" class="form-control bg-light border-0" rows="5" placeholder="Tulis pesan Anda di sini..." required></textarea>
+                                        </div>
+                                        <div class="col-12">
+                                            <button type="submit" id="btnKirim" class="btn btn-primary w-100 py-2 fw-bold rounded-pill">
+                                                <i class="fas fa-paper-plane me-2"></i> KIRIM PESAN
+                                            </button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>           
+
+            <div id="halaman-baca" style="display: none;" class="py-5 container">
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <button class="btn btn-outline-secondary mb-4 rounded-pill px-4" onclick="tutupBerita()">
+                        <i class="fas fa-arrow-left me-2"></i> Kembali
+                    </button>
+
+                    <article class="bg-white p-4 p-md-5 rounded shadow-sm border">
+                        <span class="badge bg-primary mb-2" id="detail-kategori">Kategori</span>
+                        <h1 class="fw-bold mb-3" id="detail-judul">Judul Berita</h1>
+                        <div class="d-flex align-items-center text-muted mb-4 small">
+                            <span class="me-3"><i class="far fa-calendar-alt me-1"></i> <span id="detail-tanggal">-</span></span>
+                            <span><i class="far fa-user me-1"></i> <span id="detail-penulis">-</span></span>
+                        </div>
+
+                        <img id="detail-foto" src="" class="img-fluid w-100 rounded mb-4" style="object-fit: cover; max-height: 400px;">
+                        
+                        <div id="detail-isi" class="lh-lg text-secondary" style="white-space: pre-line; font-size: 1.1rem;">
+                            Isi berita akan muncul di sini...
+                        </div>
+
+                        <hr class="my-5">
+                        
+                        <div id="area-komentar">
+                            <h4 class="fw-bold mb-4"><i class="far fa-comments me-2"></i> Diskusi & Komentar</h4>
+                            
+                            <div class="card bg-light border-0 p-4 mb-4 rounded-4">
+                                <h6 class="fw-bold mb-3">Tulis Komentar</h6>
+                                <form onsubmit="handleKirimKomentar(event)">
+                                    <input type="hidden" id="komentar-id-berita">
+                                    <div class="mb-3">
+                                        <input type="text" id="komentar-nama" class="form-control border-0 py-2" placeholder="Nama Anda" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <textarea id="komentar-isi" class="form-control border-0" rows="3" placeholder="Tulis tanggapan Anda yang sopan..." required></textarea>
+                                    </div>
+                                    <button type="submit" id="btn-kirim-komen" class="btn btn-primary rounded-pill px-4 btn-sm">
+                                        Kirim Komentar
+                                    </button>
+                                </form>
+                            </div>
+
+                            <div id="list-komentar-container">
+                                <p class="text-center text-muted">Memuat komentar...</p>
+                            </div>
+                        </div>
+                    </article>
+                </div>
+            </div>
+        </div>
+        </main>
+
+        <footer class="text-center">
+            <div class="container"><p class="mb-0">&copy; 2026 <span id="footer-sekolah">Sekolah</span>. All Rights Reserved.</p></div>
+        </footer>
+    </div>
+
+    <div id="admin-panel">
+        <nav class="navbar navbar-dark bg-dark px-4 shadow">
+            <span class="navbar-brand mb-0 h1"><i class="fas fa-tachometer-alt me-2"></i> Dashboard Admin</span>
+            <div class="d-flex align-items-center">
+                <span class="text-white me-3" id="admin-name">User</span>
+                <button class="btn btn-danger btn-sm" onclick="handleLogout()">
+                    <i class="fas fa-sign-out-alt me-1"></i> Keluar
+                </button>
+            </div>
+        </nav>
+        
+        <div class="container mt-4">
+            <div class="alert alert-info">
+                <h4><i class="fas fa-tools me-2"></i> Selamat Datang!</h4>
+                <p class="mb-0">Fitur Input, Edit, dan Hapus data akan muncul di sini. Untuk saat ini, fitur Login/Logout sudah berfungsi normal.</p>
+            </div>
+            
+            <div class="card p-3 shadow-sm">
+                <h5>Status Sistem</h5>
+                <p>Anda login sebagai: <b id="user-role">-</b></p>
+                <button class="btn btn-primary" onclick="alert('Fitur CRUD akan kita aktifkan di langkah berikutnya!')">Test Tombol</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // --- KONFIGURASI ---
+        const API_URL = 'https://script.google.com/macros/s/AKfycbxruq15KjoLlt0QZO-BRD6I7ORoARKZ8FB-PS-iKcODWRKHHIL-44rAPsp543oL4Gt-gQ/exec'; // <--- PASTIKAN INI BENAR
+
+        let globalData = {};
+        
+        document.addEventListener("DOMContentLoaded", function() {
+            // 1. Cek apakah user sedang login?
+            checkSession();
+            // 2. Ambil data public
+            fetchDataSekolah();
+        });
+
+        // --- FUNGSI LOGIN & SESSION ---
+        function toggleLogin(show) {
+            document.getElementById('login-modal').style.display = show ? 'flex' : 'none';
+        }
+
+        async function handleLogin() {
+            const u = document.getElementById('username').value;
+            const p = document.getElementById('password').value;
+            
+            // Tampilkan loading kecil (opsional)
+            const btn = event.target;
+            btn.innerHTML = 'Memproses...';
+            
+            try {
+                const res = await fetch(`${API_URL}?action=login&user=${u}&pass=${p}`, { method: 'POST' });
+                const result = await res.json();
+                
+                if (result.status === 'success') {
+                    // SIMPAN SESI LOGIN
+                    localStorage.setItem('sekolahUser', JSON.stringify(result.user));
+                    alert("Login Berhasil!");
+                    location.reload(); // Refresh halaman agar masuk mode admin
+                } else {
+                    alert("Gagal: " + result.message);
+                    btn.innerHTML = 'MASUK';
+                }
+            } catch (e) {
+                alert("Error koneksi");
+                btn.innerHTML = 'MASUK';
+            }
+        }
+
+        function handleLogout() {
+            if(confirm("Yakin ingin keluar dari Dashboard?")) {
+                localStorage.removeItem('sekolahUser');
+                location.reload(); // Refresh halaman agar kembali ke public
+            }
+        }
+
+        function checkSession() {
+            const sess = localStorage.getItem('sekolahUser');
+            if (sess) {
+                // JIKA LOGIN: Sembunyikan Public, Tampilkan Admin
+                const user = JSON.parse(sess);
+                document.getElementById('public-view').style.display = 'none';
+                document.getElementById('admin-panel').style.display = 'block';
+                document.getElementById('admin-name').innerText = user.nama;
+                document.getElementById('user-role').innerText = user.role;
+                
+                // Matikan loader public karena admin punya loader sendiri nanti
+                document.getElementById('loader').style.display = 'none';
+                renderAdminTable();
+            } else {
+                // JIKA BELUM LOGIN: Tampilkan Public, Sembunyikan Admin
+                document.getElementById('public-view').style.display = 'block';
+                document.getElementById('admin-panel').style.display = 'none';
+            }
+        }
+// --- LOGIKA ADMIN (CRUD) ---
+        let currentTab = 'berita'; // Default tab
+
+        // 1. Fungsi Ganti Tab di Dashboard
+        function switchTab(tabName) {
+            currentTab = tabName;
+            // Update Tampilan Tabel
+            renderAdminTable();
+            // Update Judul
+            document.querySelector('#admin-panel h4').innerHTML = `<i class="fas fa-tools me-2"></i> Kelola ${tabName.toUpperCase()}`;
+        }
+
+        // 2. Render Tabel Admin
+        function renderAdminTable() {
+            const container = document.querySelector('#admin-panel .container');
+            
+            // Ambil data sesuai tab yang aktif
+            let dataList = globalData[currentTab] || []; 
+            
+            let html = `
+                <div class="card p-3 shadow-sm mt-3">
+                    <div class="d-flex justify-content-between mb-3">
+                        <div class="btn-group">
+                            <button class="btn btn-${currentTab=='berita'?'primary':'outline-primary'}" onclick="switchTab('berita')">Berita</button>
+                            <button class="btn btn-${currentTab=='ekstrakurikuler'?'primary':'outline-primary'}" onclick="switchTab('ekstrakurikuler')">Ekskul</button>
+                            <button class="btn btn-${currentTab=='galeri'?'primary':'outline-primary'}" onclick="switchTab('galeri')">Galeri</button>
+                            <button class="btn btn-${currentTab=='fasilitas'?'primary':'outline-primary'}" onclick="switchTab('fasilitas')">Fasilitas</button>
+                            <button class="btn btn-${currentTab=='guru'?'primary':'outline-primary'}" onclick="switchTab('guru')">Guru</button>
+                        </div>
+                        <button class="btn btn-success" onclick="openForm()"><i class="fas fa-plus"></i> Tambah</button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover">
+                            <thead class="table-light"><tr><th>Gambar</th><th>Judul/Nama</th><th>Info/Penulis</th><th>Aksi</th></tr></thead>
+                            <tbody>`;
+            
+            if(dataList.length === 0) {
+                html += `<tr><td colspan="4" class="text-center">Belum ada data.</td></tr>`;
+            } else {
+                dataList.forEach(item => {
+                    // MAPPING DATA AGAR FLEKSIBEL (Bisa baca NIP atau ID)
+                    let id = item.ID || item.id || item.NIP; 
+                    let judul = item.Judul || item.NamaEkskul || item.NamaLengkap || 'Tanpa Judul';
+                    let img = item.GambarURL || item.FotoURL || 'https://via.placeholder.com/50';
+                    let info = item.Penulis || item.IDPenulis || item.MataPelajaran || '-';
+                    
+                    html += `
+                        <tr>
+                            <td style="width:80px"><img src="${img}" style="height:50px; width:50px; object-fit:cover" class="rounded-circle"></td>
+                            <td>${judul}</td>
+                            <td>${info}</td>
+                            <td style="width:150px">
+                                <button class="btn btn-sm btn-warning" onclick="editData('${id}')"><i class="fas fa-edit"></i></button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteData('${id}')"><i class="fas fa-trash"></i></button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
+            html += `</tbody></table></div></div>`;
+            
+            // Render ke layar
+            const oldCard = document.querySelector('#admin-panel .card:not(:first-child)'); // Hindari kartu status user
+            if(oldCard) oldCard.outerHTML = html;
+            else container.insertAdjacentHTML('beforeend', html);
+        }
+
+        // --- LOGIKA MODAL (FORM) YANG BENAR ---
+        // Kita inisialisasi Modal pakai Bootstrap API agar tombol close berfungsi normal
+        var myModal;
+        document.addEventListener("DOMContentLoaded", function() {
+            var modalEl = document.getElementById('formModal');
+            if(modalEl) {
+                myModal = new bootstrap.Modal(modalEl, {
+                    keyboard: false
+                });
+            }
+            
+            // FITUR: INGAT TAB TERAKHIR SETELAH REFRESH
+            // Cek apakah ada tab tersimpan?
+            const lastTab = localStorage.getItem('lastAdminTab');
+            if(lastTab && localStorage.getItem('sekolahUser')) {
+                // Jika ada, set currentTab dan render ulang
+                currentTab = lastTab;
+            }
+            
+            checkSession();
+            fetchDataSekolah();
+        });
+
+        // 1. UPDATE FUNGSI OPEN FORM (LOGIKA FORM GALERI)
+        function openForm(reset = true) {
+            if(reset) {
+                document.getElementById('dataForm').reset();
+                document.getElementById('inputId').value = '';
+                document.getElementById('modalTitle').innerText = "Tambah " + currentTab.toUpperCase();
+            }
+            
+            const fNIP = document.getElementById('field-nip');
+            const fJabatan = document.getElementById('field-jabatan');
+            const fUser = document.getElementById('field-username');
+            const fIsi = document.getElementById('field-isi'); // KITA AMBIL FIELD ISI
+            
+            const lJudul = document.getElementById('label-judul');
+            const lKat = document.getElementById('label-kategori');
+            const lIsi = document.getElementById('label-isi');
+
+            // Reset tampilan default (Tampilkan semua dulu)
+            fNIP.style.display = 'none';
+            fJabatan.style.display = 'none';
+            fUser.style.display = 'none';
+            fIsi.style.display = 'block'; // Default muncul
+
+            // Pastikan field kategori muncul dulu (default)
+            if(document.getElementById('field-kategori')) document.getElementById('field-kategori').style.display = 'block';
+
+            // === LOGIKA GANTI WAJAH FORM ===
+            if(currentTab === 'guru') {
+                // ... (kode guru tetap sama) ...
+                fNIP.style.display = 'block';
+                fJabatan.style.display = 'block';
+                fUser.style.display = 'block';
+                lJudul.innerText = "Nama Lengkap & Gelar";
+                lKat.innerText = "Mata Pelajaran";
+                lIsi.innerText = "Motto / Kata Motivasi";
+                document.getElementById('inputIsi').rows = 2;
+
+            } else if (currentTab === 'fasilitas') {
+                // --- INI LOGIKA BARU UNTUK FASILITAS ---
+                lJudul.innerText = "Nama Fasilitas (Cth: Lab Komputer)";
+                
+                // Sembunyikan Kategori karena tidak dipakai
+                if(document.getElementById('field-kategori')) document.getElementById('field-kategori').style.display = 'none';
+                
+                lIsi.innerText = "Deskripsi Fasilitas";
+                document.getElementById('inputIsi').rows = 3;
+
+            } else if (currentTab === 'ekstrakurikuler') {
+                // ... (kode ekskul tetap sama) ...
+                lJudul.innerText = "Nama Ekstrakurikuler";
+                lKat.innerText = "Hari Latihan";
+                lIsi.innerText = "Deskripsi Kegiatan";
+                document.getElementById('inputIsi').rows = 4;
+
+            } else if (currentTab === 'galeri') {
+                // ... (kode galeri tetap sama) ...
+                fIsi.style.display = 'none'; 
+                lJudul.innerText = "Judul Foto / Video";
+                lKat.innerText = "Kategori (Contoh: Kegiatan, Lomba)";
+                
+            } else {
+                // Default Berita
+                lJudul.innerText = "Judul Berita";
+                lKat.innerText = "Kategori Berita";
+                lIsi.innerText = "Isi Berita Lengkap";
+                document.getElementById('inputIsi').rows = 6;
+            }
+
+            // BUKA MODAL
+            myModal.show();
+        }
+
+        // 2. FUNGSI TUTUP FORM
+        function closeForm() {
+            myModal.hide();
+        }
+
+        // 3. UPDATE FUNGSI EDIT DATA
+        function editData(id) {
+            const list = globalData[currentTab];
+            const item = list.find(x => x.ID == id || x.id == id || x.NIP == id);
+            
+            if(item) {
+                openForm(false); 
+                document.getElementById('inputId').value = id;
+                document.getElementById('modalTitle').innerText = "Edit Data";
+                
+                document.getElementById('inputJudul').value = item.Judul || item.NamaEkskul || item.NamaLengkap || '';
+                document.getElementById('inputIsi').value = item.IsiKonten || item.Deskripsi || item.Motto || '';
+                document.getElementById('inputKategori').value = item.Kategori || item.HariLatihan || item.MataPelajaran || '';
+                document.getElementById('inputFoto').value = item.GambarURL || item.FotoURL || '';
+
+                if(currentTab === 'guru') {
+                    document.getElementById('inputNIP').value = item.NIP || '';
+                    document.getElementById('inputNIP').readOnly = true; 
+                    document.getElementById('inputJabatan').value = item.Jabatan || '';
+                    document.getElementById('inputUsername').value = item.Username || '';
+                } else {
+                    document.getElementById('inputNIP').readOnly = false;
+                }
+            }
+        }
+
+        // 4. UPDATE SUBMIT DATA (VERSI ANTI ERROR - LEWAT BODY)
+        async function submitData() {
+            const btn = event.target;
+            btn.innerHTML = 'Menyimpan...'; btn.disabled = true;
+
+            const user = JSON.parse(localStorage.getItem('sekolahUser'));
+            const id = document.getElementById('inputId').value;
+            
+            const payload = {
+                action: 'save',
+                sheet: currentTab.charAt(0).toUpperCase() + currentTab.slice(1), 
+                id: id,
+                user: user.username,
+                judul: document.getElementById('inputJudul').value,
+                isi: document.getElementById('inputIsi').value,
+                kategori: document.getElementById('inputKategori').value,
+                fotoLama: document.getElementById('inputFoto').value, 
+                jabatan: document.getElementById('inputJabatan').value,
+                username: document.getElementById('inputUsername').value,
+                nip: document.getElementById('inputNIP').value, 
+                
+                // Mapping Alias
+                namaEkskul: document.getElementById('inputJudul').value,
+                deskripsi: document.getElementById('inputIsi').value,
+                hari: document.getElementById('inputKategori').value,
+                namaPenulis: user.nama
+            };
+
+            // --- PERBAIKAN DI SINI (KIRIM VIA BODY) ---
+            try {
+                // Kita tidak lagi menempelkan params di URL (API_URL + '?' + params)
+                // Tapi memasukkannya ke dalam 'body'
+                const res = await fetch(API_URL, { 
+                    method: 'POST',
+                    body: new URLSearchParams(payload) 
+                });
+                
+                const result = await res.json();
+                if(result.status === 'success') {
+                    alert("Berhasil disimpan!");
+                    closeForm();
+                    localStorage.setItem('lastAdminTab', currentTab);
+                    location.reload(); 
+                } else { alert("Gagal: " + result.message); }
+            } catch(e) { alert("Error: " + e.message); }
+            
+            btn.innerHTML = 'SIMPAN'; btn.disabled = false;
+        }
+
+        // 6. HAPUS DATA
+        async function deleteData(id) {
+            if(!confirm("Yakin hapus data ini?")) return;
+            
+            const user = JSON.parse(localStorage.getItem('sekolahUser'));
+            const sheetName = currentTab == 'ekstrakurikuler' ? 'Ekstrakurikuler' : currentTab.charAt(0).toUpperCase() + currentTab.slice(1);
+            
+            try {
+                const res = await fetch(`${API_URL}?action=delete&sheet=${sheetName}&id=${id}&user=${user.username}`, { method: 'POST' });
+                const result = await res.json();
+                
+                if(result.status === 'success') {
+                    alert("Terhapus!");
+                    location.reload();
+                } else {
+                    alert("Gagal: " + result.message);
+                }
+            } catch(e) {
+                alert("Error: " + e.message);
+            }
+        }
+        // --- FUNGSI AMBIL DATA PUBLIC & ADMIN ---
+        async function fetchDataSekolah() {
+            try {
+                const response = await fetch(API_URL);
+                const data = await response.json();
+                globalData = data; 
+
+                // 1. Render Tampilan Public
+                renderConfig(data.konfigurasi);
+                renderNav(data.navigasi);
+                renderHero(data.hero);
+                renderBerita(data.berita);
+                renderGuru(data.guru);
+                renderEkskul(data.ekstrakurikuler);
+                renderGaleri(data.galeri);
+                renderFasilitas(data.fasilitas);
+
+                // 2. Refresh Tabel Admin (Jika sedang login)
+                if(localStorage.getItem('sekolahUser')) {
+                    renderAdminTable(); 
+                }
+
+                // --- FITUR INGAT HALAMAN (AUTO OPEN) ---
+                // Kita cek apakah ada tanda pagar (#) di URL?
+                const hash = window.location.hash.substring(1); // Ambil teks setelah # (misal: galeri)
+                
+                // Jika ada hash DAN halaman itu ada di HTML, buka halaman itu.
+                if(hash && document.getElementById(hash)) {
+                    bukaHalaman(hash);
+                } else {
+                    // Jika tidak ada hash, buka Beranda (Home)
+                    bukaHalaman('home');
+                }
+                // ---------------------------------------
+
+                document.getElementById('loader').style.display = 'none';
+            } catch (error) {
+                console.error(error);
+                document.getElementById('loader').innerHTML = '<p class="text-danger text-center mt-5">Gagal mengambil data.<br>Periksa URL Script Anda.</p>';
+            }
+        }
+
+        // --- RENDER CONFIG (UPDATE LOGO NAVBAR & KEPSEK) ---
+        function renderConfig(config) {
+            if(!config) return;
+            
+            // 1. Data Umum & Navbar
+            document.title = config.NamaSekolah || "Website Sekolah";
+            document.getElementById('brand-text').innerText = config.NamaSekolah;
+            document.getElementById('footer-sekolah').innerText = config.NamaSekolah;
+            document.getElementById('alamat-sekolah').innerText = config.Alamat || "-";
+            document.getElementById('telp-sekolah').innerText = config.NoHP || "-";
+
+            // --- LOGIKA LOGO NAVBAR ---
+            const navLogo = document.getElementById('nav-logo');
+            const navIcon = document.getElementById('nav-icon');
+
+            if (config.LogoURL) {
+                navLogo.src = config.LogoURL;
+                navLogo.style.display = 'block'; // Tampilkan Gambar
+                navIcon.style.display = 'none';  // Sembunyikan Ikon Gedung
+            } else {
+                navLogo.style.display = 'none';
+                navIcon.style.display = 'block'; // Pakai Ikon kalau logo kosong
+            }
+            // --------------------------
+
+            // 2. Data Kepala Sekolah
+            document.getElementById('sambutan-sekolah').innerText = config.SambutanKepsek || config.DeskripsiSingkat || "Selamat datang di sekolah kami.";
+            
+            if(config.NamaKepsek) {
+                document.getElementById('nama-kepsek').innerText = config.NamaKepsek;
+            }
+
+            // Foto Kepsek
+            if(config.FotoKepsek) {
+                document.getElementById('foto-kepsek').src = config.FotoKepsek;
+            } else if (config.LogoURL) {
+                document.getElementById('foto-kepsek').src = config.LogoURL;
+            }
+        }
+
+        // --- RENDER NAVIGASI PINTAR (DENGAN URL HASH) ---
+        function renderNav(navData) {
+            const menuContainer = document.getElementById('nav-menu');
+            menuContainer.innerHTML = '';
+            
+            if(!navData) return;
+            navData.sort((a, b) => a.Urutan - b.Urutan);
+            
+            navData.forEach(menu => {
+                // Bersihkan ID (profil, berita, dll)
+                let pageId = menu.Link.replace('#', '').trim().toLowerCase();
+                
+                // PERUBAHAN DI SINI: href="#" diganti jadi href="#${pageId}"
+                // Ini membuat URL otomatis berubah saat diklik (misal: #galeri)
+                menuContainer.innerHTML += `
+                    <li class="nav-item">
+                        <a class="nav-link" href="#${pageId}" onclick="bukaHalaman('${pageId}')">${menu.NamaMenu}</a>
+                    </li>`;
+            });
+        }
+
+        // --- FUNGSI GANTI HALAMAN (SPA LOGIC) ---
+        function bukaHalaman(pageId) {
+            // 1. Sembunyikan SEMUA Section
+            const sections = document.querySelectorAll('main section');
+            sections.forEach(sec => sec.style.display = 'none');
+            
+            // 2. Sembunyikan juga halaman detail berita (kalau sedang terbuka)
+            const bacaPage = document.getElementById('halaman-baca');
+            if(bacaPage) bacaPage.style.display = 'none';
+
+            // 3. Tampilkan Section yang dipilih
+            const target = document.getElementById(pageId);
+            if(target) {
+                // Jika Home, pakai display flex (biar centering). Selain itu block.
+                target.style.display = (pageId === 'home') ? 'flex' : 'block';
+                window.scrollTo(0, 0); // Scroll ke atas
+            }
+
+            // 4. Ubah Tampilan Navbar
+            const navbar = document.querySelector('.navbar-public');
+            if (pageId === 'home') {
+                navbar.classList.remove('navbar-solid'); // Transparan di Home
+            } else {
+                navbar.classList.add('navbar-solid'); // Warna Solid di halaman lain
+            }
+        }
+
+        function renderHero(heroData) {
+            if(heroData && heroData.length > 0) {
+                const h = heroData[0];
+                document.getElementById('hero-title').innerText = h.Judul;
+                document.getElementById('hero-desc').innerText = h.Deskripsi;
+                if(h.GambarURL) document.querySelector('.hero-section').style.backgroundImage = `url('${h.GambarURL}')`;
+            }
+        }
+
+        // --- LOGIKA BERITA & ARTIKEL (SPLIT TAB) ---
+        
+        // 1. Render Pemilah Data
+        function renderBerita(d) {
+            const cBerita = document.getElementById('berita-container');
+            const cArtikel = document.getElementById('artikel-container');
+            
+            cBerita.innerHTML = '';
+            cArtikel.innerHTML = '';
+            
+            if(!d) return;
+            
+            d.forEach(i => {
+                let tgl = i.Tanggal ? new Date(i.Tanggal).toLocaleDateString('id-ID', {day: 'numeric', month: 'long', year: 'numeric'}) : '';
+                let kategori = i.Kategori || 'Umum';
+                let judul = i.Judul || 'Tanpa Judul';
+                let isi = i.IsiKonten || '';
+                
+                // Template Kartu (Kita simpan di variabel biar rapi)
+                let kartuHTML = `
+                    <div class="col-md-4">
+                        <div class="card h-100 shadow-sm border-0 hover-effect">
+                            <div style="cursor: pointer;" onclick="bacaBerita('${i.ID}')">
+                                <img src="${i.GambarURL || 'https://via.placeholder.com/400x200'}" class="card-img-top" alt="Foto" style="height: 200px; object-fit: cover;">
+                            </div>
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <small class="text-muted"><i class="far fa-calendar-alt"></i> ${tgl}</small>
+                                    <span class="badge bg-light text-primary border">${kategori}</span>
+                                </div>
+                                <h5 class="card-title fw-bold">
+                                    <a href="#" class="text-decoration-none text-dark" onclick="bacaBerita('${i.ID}')">${judul}</a>
+                                </h5>
+                                <p class="card-text text-muted small text-truncate">${isi}</p>
+                                <button class="btn btn-outline-primary btn-sm mt-3 w-100 rounded-pill" onclick="bacaBerita('${i.ID}')">Baca Selengkapnya</button>
+                            </div>
+                        </div>
+                    </div>`;
+
+                // LOGIKA PEMISAH: Cek apakah Kategori mengandung kata "Artikel"?
+                if (kategori.toLowerCase().includes('artikel')) {
+                    cArtikel.innerHTML += kartuHTML;
+                } else {
+                    cBerita.innerHTML += kartuHTML;
+                }
+            });
+            
+            // Pesan jika kosong
+            if(cBerita.innerHTML === '') cBerita.innerHTML = '<p class="text-center text-muted col-12 py-5">Belum ada berita terbaru.</p>';
+            if(cArtikel.innerHTML === '') cArtikel.innerHTML = '<p class="text-center text-muted col-12 py-5">Belum ada artikel.</p>';
+        }
+
+        // 2. Fungsi Ganti Tab Berita
+        function switchBeritaTab(mode) {
+            const cBerita = document.getElementById('berita-container');
+            const cArtikel = document.getElementById('artikel-container');
+            const bBerita = document.getElementById('btn-tab-news');
+            const bArtikel = document.getElementById('btn-tab-artikel');
+
+            if(mode === 'news') {
+                cBerita.style.display = 'flex';
+                cArtikel.style.display = 'none';
+                bBerita.className = 'btn btn-primary px-4 py-2 fw-bold';
+                bArtikel.className = 'btn btn-light px-4 py-2 fw-bold';
+            } else {
+                cBerita.style.display = 'none';
+                cArtikel.style.display = 'flex';
+                bArtikel.className = 'btn btn-primary px-4 py-2 fw-bold'; // Biru juga (atau ganti warna lain boleh)
+                bBerita.className = 'btn btn-light px-4 py-2 fw-bold';
+            }
+        }
+
+        function renderGuru(d) {
+            const c = document.getElementById('guru-container'); c.innerHTML = '';
+            if(!d) return;
+            
+            // CEK USER LOGIN
+            const user = JSON.parse(localStorage.getItem('sekolahUser'));
+            
+            d.forEach(i => {
+                let htmlJabatan = '';
+                if(i.Jabatan && i.Jabatan !== '-') {
+                    htmlJabatan = `<small class="text-secondary fw-bold d-block mb-1" style="font-size: 0.85rem;">${i.Jabatan}</small>`;
+                }
+
+                // LOGIKA TOMBOL EDIT PRIBADI
+                // Jika User Login ADA, DAN Username-nya COCOK dengan data Guru ini
+                let btnEdit = '';
+                if(user && i.Username && user.username === i.Username) {
+                    btnEdit = `
+                        <button class="btn btn-warning btn-sm position-absolute top-0 end-0 m-2 shadow" 
+                                onclick="editProfilSaya('${i.NIP || i.ID}')" style="z-index: 10;">
+                            <i class="fas fa-pen"></i> Edit Profil
+                        </button>`;
+                }
+
+                c.innerHTML += `
+                    <div class="col-md-3 col-6">
+                        <div class="card h-100 border-0 shadow-sm text-center overflow-hidden hover-effect" style="transition: 0.3s;">
+                            ${btnEdit} <div class="bg-primary opacity-10" style="height: 60px;"></div>
+                            <div class="card-body p-4 pt-0 position-relative">
+                                <div class="mx-auto mb-3 position-relative" style="width: 120px; height: 120px; margin-top: -60px;">
+                                    <img src="${i.FotoURL || 'https://via.placeholder.com/150'}" 
+                                         class="w-100 h-100 rounded-circle border border-4 border-white shadow-sm object-fit-cover bg-white">
+                                </div>
+                                <h5 class="fw-bold mb-1 text-dark">${i.NamaLengkap}</h5>
+                                ${htmlJabatan}
+                                <div class="text-primary fw-bold small text-uppercase mb-2" style="letter-spacing: 1px; font-size: 0.75rem;">
+                                    ${i.MataPelajaran}
+                                </div>
+                                <hr class="mx-auto opacity-25" style="width: 50px;">
+                                <p class="card-text text-muted small fst-italic">"${i.Motto || 'Mendidik dengan Hati.'}"</p>
+                            </div>
+                            <div class="card-footer bg-white border-0 py-3">
+                                <span class="badge bg-light text-primary border rounded-pill">SMPN 1 Modayag</span>
+                            </div>
+                        </div>
+                    </div>`;
+            });
+        }
+
+        // FITUR EDIT PROFIL MANDIRI
+        function editProfilSaya(id) {
+            // Set mode ke Guru agar form menyesuaikan
+            currentTab = 'guru'; 
+            
+            // Cari data guru berdasarkan NIP/ID
+            const item = globalData.guru.find(x => x.NIP == id || x.ID == id);
+            
+            if(item) {
+                openForm(false);
+                document.getElementById('inputId').value = id;
+                document.getElementById('modalTitle').innerText = "Edit Profil Saya";
+                
+                // Mapping Data Guru ke Form
+                document.getElementById('inputJudul').value = item.NamaLengkap; // Nama masuk ke Judul
+                document.getElementById('inputJabatan').value = item.Jabatan || '';
+                document.getElementById('inputKategori').value = item.MataPelajaran; // Mapel masuk ke Kategori
+                document.getElementById('inputIsi').value = item.Motto || ''; // Motto masuk ke Isi
+                document.getElementById('inputFoto').value = item.FotoURL || '';
+            }
+        }
+
+        function renderEkskul(d) {
+            const c = document.getElementById('ekskul-container'); c.innerHTML = '';
+            if(!d) return;
+            
+            d.forEach(i => {
+                // Pastikan deskripsi tidak terlalu panjang
+                let deskripsi = i.Deskripsi || 'Kegiatan positif untuk pengembangan diri siswa.';
+                if(deskripsi.length > 80) deskripsi = deskripsi.substring(0, 80) + '...';
+
+                c.innerHTML += `
+                    <div class="col-md-4 col-sm-6">
+                        <div class="card h-100 border-0 shadow-sm hover-effect overflow-hidden">
+                            <div class="position-relative">
+                                <img src="${i.FotoURL || 'https://via.placeholder.com/400x250'}" 
+                                     class="card-img-top" style="height: 200px; object-fit: cover;">
+                                
+                                <div class="position-absolute top-0 end-0 m-3">
+                                    <span class="badge bg-primary shadow">
+                                        <i class="far fa-clock me-1"></i> ${i.HariLatihan || 'Jadwal Menyesuaikan'}
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <div class="card-body p-4 text-center">
+                                <div class="mb-3 d-inline-block p-3 rounded-circle bg-light text-primary">
+                                    <i class="fas fa-running fa-lg"></i>
+                                </div>
+                                <h4 class="fw-bold mb-2">${i.NamaEkskul}</h4>
+                                <p class="text-muted small mb-0">
+                                    ${deskripsi}
+                                </p>
+                            </div>
+                            
+                            <div class="card-footer bg-white border-0 pb-4 pt-0 text-center">
+                                <button class="btn btn-outline-primary btn-sm rounded-pill px-4" onclick="alert('Hubungi Pembina Ekskul untuk mendaftar!')">
+                                    Info Pendaftaran
+                                </button>
+                            </div>
+                        </div>
+                    </div>`;
+            });
+        }
+
+        // --- LOGIKA GALERI (FOTO & VIDEO) - MODEL THUMBNAIL LINK ---
+        function renderGaleri(d) {
+            const containerFoto = document.getElementById('galeri-foto-container');
+            const containerVideo = document.getElementById('galeri-video-container');
+            
+            containerFoto.innerHTML = '';
+            containerVideo.innerHTML = '';
+            
+            if(!d) return;
+            
+            d.forEach(i => {
+                let url = i.GambarURL; 
+                if (!url || url.trim() === "") return; // Satpam Data Kosong
+                
+                url = url.trim(); 
+                let judul = i.Judul || 'Dokumentasi Sekolah';
+                let kategori = i.Kategori || 'Umum';
+
+                // Cek apakah ini Link YOUTUBE?
+                if ((url.includes('youtube.com') || url.includes('youtu.be')) && !url.match(/\.(jpeg|jpg|gif|png)$/)) {
+                    
+                    // --- RENDER VIDEO (MODEL THUMBNAIL) ---
+                    let videoID = getYoutubeID(url);
+                    
+                    if (videoID) {
+                        // Ambil Thumbnail otomatis dari YouTube
+                        let thumbURL = `https://img.youtube.com/vi/${videoID}/hqdefault.jpg`;
+                        
+                        containerVideo.innerHTML += `
+                            <div class="col-md-4 col-sm-6">
+                                <div class="card border-0 shadow-sm h-100 overflow-hidden hover-effect">
+                                    <a href="${url}" target="_blank" class="text-decoration-none position-relative d-block">
+                                        
+                                        <img src="${thumbURL}" class="w-100" style="height: 200px; object-fit: cover; filter: brightness(0.8);">
+                                        
+                                        <div class="position-absolute top-50 start-50 translate-middle">
+                                            <div class="bg-danger text-white rounded-circle d-flex align-items-center justify-content-center shadow-lg" 
+                                                 style="width: 60px; height: 60px; border: 3px solid white;">
+                                                <i class="fas fa-play fa-lg ms-1"></i>
+                                            </div>
+                                        </div>
+                                    </a>
+
+                                    <div class="card-body p-3 text-center">
+                                        <h6 class="fw-bold mb-0 text-dark text-truncate">${judul}</h6>
+                                        <small class="text-muted">${kategori}</small>
+                                        <br>
+                                        <a href="${url}" target="_blank" class="btn btn-sm btn-outline-danger mt-2 rounded-pill px-3">
+                                            <i class="fab fa-youtube me-1"></i> Tonton di YouTube
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>`;
+                    }
+                } else {
+                    // --- RENDER FOTO (TETAP SAMA) ---
+                    containerFoto.innerHTML += `
+                        <div class="col-md-4 col-sm-6">
+                            <div class="card border-0 shadow-sm h-100 overflow-hidden hover-effect" style="border-radius: 15px;">
+                                <div class="position-relative overflow-hidden">
+                                    <img src="${url}" 
+                                         class="w-100" 
+                                         style="height: 250px; object-fit: cover; transition: transform 0.5s;"
+                                         onmouseover="this.style.transform='scale(1.1)'" 
+                                         onmouseout="this.style.transform='scale(1)'"
+                                         onerror="this.src='https://via.placeholder.com/400?text=Gagal+Muat'">
+                                    
+                                    <div class="position-absolute bottom-0 start-0 w-100 p-3 d-flex flex-column justify-content-end" 
+                                         style="height: 100%; background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 60%); pointer-events: none;">
+                                        <span class="badge bg-warning text-dark align-self-start mb-2">${kategori}</span>
+                                        <h5 class="text-white fw-bold mb-0 text-shadow">${judul}</h5>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>`;
+                }
+            });
+            
+            // Pesan jika kosong
+            if(containerVideo.innerHTML === '') containerVideo.innerHTML = '<p class="text-center text-muted col-12 py-5">Belum ada video dokumentasi.</p>';
+            if(containerFoto.innerHTML === '') containerFoto.innerHTML = '<p class="text-center text-muted col-12 py-5">Belum ada foto dokumentasi.</p>';
+        }
+
+        // --- RENDER FASILITAS (BARU) ---
+        function renderFasilitas(d) {
+            const c = document.getElementById('fasilitas-container');
+            if(!c) return; 
+            c.innerHTML = '';
+            
+            if(!d || d.length === 0) return; 
+            
+            d.forEach(i => {
+                c.innerHTML += `
+                    <div class="col-md-4">
+                        <div class="card h-100 border-0 shadow-sm hover-effect overflow-hidden">
+                            <img src="${i.FotoURL || 'https://via.placeholder.com/400x250'}" 
+                                 class="card-img-top" style="height: 200px; object-fit: cover;">
+                            <div class="card-body text-center p-4">
+                                <h5 class="fw-bold text-primary mb-2">${i.NamaFasilitas}</h5>
+                                <p class="text-muted small mb-0">${i.Deskripsi}</p>
+                            </div>
+                        </div>
+                    </div>`;
+            });
+        }
+
+        // 2. Fungsi Ganti Tab (INI YANG KEMARIN HILANG)
+        function switchGaleriTab(mode) {
+            const cFoto = document.getElementById('galeri-foto-container');
+            const cVideo = document.getElementById('galeri-video-container');
+            const bFoto = document.getElementById('btn-tab-foto');
+            const bVideo = document.getElementById('btn-tab-video');
+
+            if(mode === 'foto') {
+                cFoto.style.display = 'flex';
+                cVideo.style.display = 'none';
+                // Ubah warna tombol
+                bFoto.className = 'btn btn-primary px-4 py-2 fw-bold';
+                bVideo.className = 'btn btn-light px-4 py-2 fw-bold';
+            } else {
+                cFoto.style.display = 'none';
+                cVideo.style.display = 'flex';
+                // Ubah warna tombol (Merah untuk Video)
+                bVideo.className = 'btn btn-danger px-4 py-2 fw-bold'; 
+                bFoto.className = 'btn btn-light px-4 py-2 fw-bold';
+            }
+        }
+
+        // 3. Helper: Ambil ID Youtube (Versi ROBUST)
+        function getYoutubeID(url) {
+            if (!url) return null;
+            url = url.trim();
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=|shorts\/)([^#&?]*).*/;
+            const match = url.match(regExp);
+            return (match && match[2].length >= 11) ? match[2].substring(0, 11) : null;
+        }
+
+        // --- FUNGSI BACA BERITA (DETAIL VIEW) ---
+        function bacaBerita(id) {
+            // 1. Cari data berita berdasarkan ID
+            const berita = globalData.berita.find(x => x.ID == id || x.id == id);
+            if(!berita) return;
+
+            // 2. Sembunyikan semua section Home, Tampilkan Wadah Baca
+            // Kita sembunyikan section-section utama saja
+            document.getElementById('home').style.display = 'none';
+            document.getElementById('profil').style.display = 'none';
+            document.getElementById('berita').style.display = 'none';
+            document.getElementById('guru').style.display = 'none';
+            document.getElementById('ekskul').style.display = 'none';
+            document.getElementById('galeri').style.display = 'none';
+            
+            // Tampilkan Halaman Baca
+            document.getElementById('halaman-baca').style.display = 'block';
+            
+            // Scroll ke atas
+            window.scrollTo(0, 0);
+
+            // 3. Isi Data ke Wadah
+            document.getElementById('detail-judul').innerText = berita.Judul;
+            document.getElementById('detail-kategori').innerText = berita.Kategori || 'Berita';
+            document.getElementById('detail-tanggal').innerText = berita.Tanggal ? new Date(berita.Tanggal).toLocaleDateString('id-ID', {weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'}) : '-';
+            document.getElementById('detail-penulis').innerText = berita.Penulis || 'Admin';
+            
+            // Handle Gambar
+            const img = document.getElementById('detail-foto');
+            if(berita.GambarURL) {
+                img.src = berita.GambarURL;
+                img.style.display = 'block';
+            } else {
+                img.style.display = 'none';
+            }
+
+            // Handle Isi Berita (Ubah baris baru jadi paragraf)
+            // Kita gunakan CSS white-space: pre-line di HTML, jadi cukup masukkan text biasa
+            document.getElementById('detail-isi').innerText = berita.IsiKonten;
+            loadKomentar(id);
+        }
+
+        function tutupBerita() {
+            // Sembunyikan Halaman Baca
+            document.getElementById('halaman-baca').style.display = 'none';
+
+            // Tampilkan Kembali Home
+            document.getElementById('home').style.display = 'flex'; // Hero pakai flex
+            document.getElementById('profil').style.display = 'block';
+            document.getElementById('berita').style.display = 'block';
+            document.getElementById('guru').style.display = 'block';
+            document.getElementById('ekskul').style.display = 'block';
+            document.getElementById('galeri').style.display = 'block';
+            
+            // Scroll ke bagian berita agar user tidak bingung
+            document.getElementById('berita').scrollIntoView({behavior: 'smooth'});
+        }
+
+        // --- FUNGSI KIRIM PESAN KE SHEET ---
+        async function handleKirimPesan(event) {
+            event.preventDefault(); // Stop loading halaman
+            
+            const btn = document.getElementById('btnKirim');
+            const originalText = btn.innerHTML;
+            
+            // Ubah tombol jadi loading biar keren
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Mengirim...';
+            btn.disabled = true;
+
+            // Ambil data yang diketik user
+            const nama = document.getElementById('pesanNama').value;
+            const kontak = document.getElementById('pesanKontak').value;
+            const subjek = document.getElementById('pesanSubjek').value;
+            const isi = document.getElementById('pesanIsi').value;
+
+            try {
+                // Kirim paket ke Google Apps Script (Kode.gs)
+                // Kita kirim parameter 'action=kirimPesan'
+                const res = await fetch(API_URL, {
+                    method: 'POST',
+                    body: new URLSearchParams({
+                        action: 'kirimPesan',
+                        nama: nama,
+                        kontak: kontak,
+                        subjek: subjek,
+                        isi: isi
+                    })
+                });
+                
+                const result = await res.json();
+                
+                if (result.status === 'success') {
+                    alert("✅ Pesan Terkirim! Terima kasih sudah menghubungi kami.");
+                    document.getElementById('formKontak').reset(); // Bersihkan formulir
+                } else {
+                    alert("❌ Gagal: " + result.message);
+                }
+            } catch (e) {
+                console.error(e);
+                alert("⚠️ Terjadi kesalahan koneksi internet.");
+            }
+
+            // Kembalikan tombol seperti semula
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+
+        // --- FITUR PENCARIAN (GLOBAL SEARCH - UPGRADED DEEP SEARCH) ---
+        function handleSearch() {
+            const input = document.getElementById('searchInput');
+            const keyword = input.value.toLowerCase().trim();
+            
+            if (keyword.length < 3) {
+                alert("Mohon ketik minimal 3 huruf untuk mencari.");
+                return;
+            }
+
+            // 1. Buka Halaman Pencarian
+            bukaHalaman('pencarian');
+            
+            const container = document.getElementById('search-results-container');
+            const feedback = document.getElementById('search-feedback');
+            container.innerHTML = ''; // Bersihkan hasil lama
+            
+            let count = 0;
+
+            // --- A. CARI DI BERITA & ARTIKEL ---
+            if (globalData.berita) {
+                globalData.berita.forEach(item => {
+                    // Cek: JUDUL atau ISI atau KATEGORI atau PENULIS
+                    if ((item.Judul && item.Judul.toLowerCase().includes(keyword)) || 
+                        (item.IsiKonten && item.IsiKonten.toLowerCase().includes(keyword)) ||
+                        (item.Kategori && item.Kategori.toLowerCase().includes(keyword)) ||
+                        (item.Penulis && item.Penulis.toLowerCase().includes(keyword))) {
+                        
+                        count++;
+                        renderCardSearch(container, 'Berita', item.Judul, item.GambarURL, item.IsiKonten, `bacaBerita('${item.ID}')`);
+                    }
+                });
+            }
+
+            // --- B. CARI DI GURU ---
+            if (globalData.guru) {
+                globalData.guru.forEach(item => {
+                    // Cek: NAMA atau MAPEL atau JABATAN atau MOTTO
+                    if ((item.NamaLengkap && item.NamaLengkap.toLowerCase().includes(keyword)) ||
+                        (item.MataPelajaran && item.MataPelajaran.toLowerCase().includes(keyword)) ||
+                        (item.Jabatan && item.Jabatan.toLowerCase().includes(keyword)) ||
+                        (item.Motto && item.Motto.toLowerCase().includes(keyword))) {
+                        
+                        count++;
+                        renderCardSearch(container, 'Guru', item.NamaLengkap, item.FotoURL, `${item.Jabatan || ''} - ${item.MataPelajaran}`, `bukaHalaman('guru')`);
+                    }
+                });
+            }
+
+            // --- C. CARI DI EKSKUL ---
+            if (globalData.ekstrakurikuler) {
+                globalData.ekstrakurikuler.forEach(item => {
+                    // Cek: NAMA EKSKUL atau DESKRIPSI
+                    if ((item.NamaEkskul && item.NamaEkskul.toLowerCase().includes(keyword)) ||
+                        (item.Deskripsi && item.Deskripsi.toLowerCase().includes(keyword))) {
+                        
+                        count++;
+                        renderCardSearch(container, 'Ekskul', item.NamaEkskul, item.FotoURL, item.Deskripsi, `bukaHalaman('ekskul')`);
+                    }
+                });
+            }
+
+            // --- D. CARI DI GALERI ---
+            if (globalData.galeri) {
+                globalData.galeri.forEach(item => {
+                    // Cek: JUDUL atau KATEGORI
+                    if ((item.Judul && item.Judul.toLowerCase().includes(keyword)) ||
+                        (item.Kategori && item.Kategori.toLowerCase().includes(keyword))) {
+                        
+                        count++;
+                        // Cek apakah video youtube?
+                        let imgUrl = item.GambarURL;
+                        if(imgUrl.includes('youtube') || imgUrl.includes('youtu.be')) {
+                            let vidID = getYoutubeID(imgUrl);
+                            if(vidID) imgUrl = `https://img.youtube.com/vi/${vidID}/hqdefault.jpg`;
+                        }
+                        renderCardSearch(container, 'Galeri', item.Judul, imgUrl, item.Kategori, `bukaHalaman('galeri')`);
+                    }
+                });
+            }
+
+            // Update Teks Feedback
+            if (count > 0) {
+                feedback.innerHTML = `Ditemukan <b>${count}</b> hasil untuk kata kunci "<b>${input.value}</b>".`;
+            } else {
+                feedback.innerHTML = `Tidak ditemukan data dengan kata kunci "<b>${input.value}</b>".`;
+                container.innerHTML = `
+                    <div class="col-12 text-center py-5">
+                        <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">Coba gunakan kata kunci lain (misal: "Matematika", "Tari", "Lomba").</p>
+                    </div>`;
+            }
+            
+            // Bersihkan input setelah search (opsional)
+            input.value = '';
+        }
+
+        // Helper: Render Kartu Hasil Pencarian
+        function renderCardSearch(container, tipe, judul, gambar, deskripsi, aksiOnClick) {
+            // Potong deskripsi biar ga kepanjangan
+            if(deskripsi && deskripsi.length > 60) deskripsi = deskripsi.substring(0, 60) + '...';
+            
+            // Warna Badge Berbeda tiap tipe
+            let badgeColor = 'primary';
+            if(tipe === 'Guru') badgeColor = 'success';
+            if(tipe === 'Ekskul') badgeColor = 'warning text-dark';
+            if(tipe === 'Galeri') badgeColor = 'danger';
+
+            container.innerHTML += `
+                <div class="col-md-4 col-sm-6">
+                    <div class="card h-100 border-0 shadow-sm hover-effect" onclick="${aksiOnClick}" style="cursor: pointer;">
+                        <div class="d-flex g-0 align-items-center p-3">
+                            <div class="flex-shrink-0">
+                                <img src="${gambar || 'https://via.placeholder.com/100'}" class="rounded" style="width: 80px; height: 80px; object-fit: cover;">
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <span class="badge bg-${badgeColor} mb-1" style="font-size: 0.7rem;">${tipe}</span>
+                                <h6 class="fw-bold mb-1 text-dark">${judul}</h6>
+                                <small class="text-muted">${deskripsi || ''}</small>
+                            </div>
+                            <div>
+                                <i class="fas fa-chevron-right text-muted"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- FITUR KOMENTAR (Front-End) ---
+
+        // 1. Load Komentar saat Buka Berita
+        async function loadKomentar(idBerita) {
+            const container = document.getElementById('list-komentar-container');
+            container.innerHTML = '<div class="text-center py-3"><div class="spinner-border text-primary spinner-border-sm"></div></div>';
+            
+            // Set ID Berita ke Form hidden input
+            document.getElementById('komentar-id-berita').value = idBerita;
+
+            try {
+                // Fetch khusus komentar (Action baru)
+                const res = await fetch(`${API_URL}?action=getKomentar&idBerita=${idBerita}`);
+                const data = await res.json();
+                
+                renderKomentarList(data);
+            } catch (e) {
+                container.innerHTML = '<p class="text-muted text-center">Gagal memuat komentar.</p>';
+            }
+        }
+
+        // 2. Render Tampilan Komentar
+        function renderKomentarList(data) {
+            const container = document.getElementById('list-komentar-container');
+            const user = JSON.parse(localStorage.getItem('sekolahUser')); // Cek Admin login
+            
+            if (!data || data.length === 0) {
+                container.innerHTML = '<p class="text-muted text-center small fst-italic">Belum ada komentar. Jadilah yang pertama!</p>';
+                return;
+            }
+
+            let html = '';
+            data.forEach(k => {
+                let tgl = k.Tanggal ? new Date(k.Tanggal).toLocaleDateString('id-ID') : '';
+                
+                // Tombol Hapus (Hanya muncul jika Admin Login)
+                let btnHapus = '';
+                if (user) { 
+                    btnHapus = `<button class="btn btn-link text-danger p-0 ms-auto" style="font-size: 0.8rem; text-decoration:none;" onclick="hapusKomentar('${k.ID}')">
+                                    <i class="fas fa-trash-alt"></i> Hapus
+                                </button>`;
+                }
+
+                html += `
+                    <div class="d-flex mb-3 pb-3 border-bottom">
+                        <div class="flex-shrink-0">
+                            <div class="bg-white border rounded-circle d-flex align-items-center justify-content-center fw-bold text-primary shadow-sm" style="width: 45px; height: 45px;">
+                                ${k.Nama.charAt(0).toUpperCase()}
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <div class="d-flex align-items-center">
+                                <h6 class="fw-bold mb-0 text-dark">${k.Nama}</h6>
+                                <small class="text-muted ms-2" style="font-size: 0.75rem;">• ${tgl}</small>
+                                ${btnHapus}
+                            </div>
+                            <p class="mb-0 text-secondary small mt-1" style="line-height: 1.5;">${k.Isi}</p>
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        // 3. Kirim Komentar
+        async function handleKirimKomentar(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btn-kirim-komen');
+            const idBerita = document.getElementById('komentar-id-berita').value;
+            const nama = document.getElementById('komentar-nama').value;
+            const isi = document.getElementById('komentar-isi').value;
+            
+            btn.innerHTML = 'Mengirim...'; btn.disabled = true;
+
+            try {
+                const res = await fetch(API_URL, {
+                    method: 'POST',
+                    body: new URLSearchParams({
+                        action: 'simpanKomentar',
+                        idBerita: idBerita,
+                        nama: nama,
+                        isi: isi
+                    })
+                });
+                const result = await res.json();
+                
+                if(result.status === 'success') {
+                    // Reset Form
+                    document.getElementById('komentar-nama').value = '';
+                    document.getElementById('komentar-isi').value = '';
+                    // Reload Komentar
+                    loadKomentar(idBerita);
+                } else {
+                    alert('Gagal mengirim.');
+                }
+            } catch (err) { alert('Error koneksi.'); }
+            
+            btn.innerHTML = 'Kirim Komentar'; btn.disabled = false;
+        }
+
+        // 4. Hapus Komentar
+        async function hapusKomentar(id) {
+            if(!confirm("Hapus komentar ini? (Tindakan Moderator)")) return;
+            
+            // Tampilan sementara dihapus manual biar cepat
+            event.target.closest('.d-flex').style.opacity = '0.5';
+
+            try {
+                // Sheet parameter wajib 'Komentar' sesuai logic Kode.gs tadi
+                const res = await fetch(`${API_URL}?action=hapusKomentar&sheet=Komentar&id=${id}`, { method: 'POST' });
+                const result = await res.json();
+                
+                if(result.status === 'success') {
+                    // Refresh data
+                    const idBerita = document.getElementById('komentar-id-berita').value;
+                    loadKomentar(idBerita);
+                } else {
+                    alert('Gagal hapus.');
+                }
+            } catch (err) { alert('Error koneksi.'); }
+        }
+    </script>
+</body>
+</html>
