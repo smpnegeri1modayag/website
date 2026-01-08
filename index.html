@@ -648,10 +648,14 @@
             document.querySelector('#admin-panel h4').innerHTML = `<i class="fas fa-tools me-2"></i> Kelola ${tabName.toUpperCase()}`;
         }
 
-        // 2. Render Tabel Admin
+        // 2. Render Tabel Admin (DENGAN PROTEKSI KEPEMILIKAN)
         function renderAdminTable() {
             const container = document.querySelector('#admin-panel .container');
             
+            // Ambil data user yang sedang login
+            const userLogin = JSON.parse(localStorage.getItem('sekolahUser'));
+            const myUsername = userLogin ? userLogin.username : '';
+
             // Ambil data sesuai tab yang aktif
             let dataList = globalData[currentTab] || []; 
             
@@ -676,20 +680,49 @@
                 html += `<tr><td colspan="4" class="text-center">Belum ada data.</td></tr>`;
             } else {
                 dataList.forEach(item => {
-                    // MAPPING DATA AGAR FLEKSIBEL (Bisa baca NIP atau ID)
+                    // MAPPING DATA
                     let id = item.ID || item.id || item.NIP; 
-                    let judul = item.Judul || item.NamaEkskul || item.NamaLengkap || 'Tanpa Judul';
+                    let judul = item.Judul || item.NamaEkskul || item.NamaLengkap || item.NamaFasilitas || 'Tanpa Judul';
                     let img = item.GambarURL || item.FotoURL || 'https://via.placeholder.com/50';
-                    let info = item.Penulis || item.IDPenulis || item.MataPelajaran || '-';
+                    let info = item.Penulis || item.IDPenulis || item.MataPelajaran || item.Deskripsi || '-';
                     
+                    // --- LOGIKA KEAMANAN (SECURITY CHECK) ---
+                    let isMyData = false;
+
+                    if (currentTab === 'guru') {
+                        // TAB GURU: Cek apakah Username data ini SAMA dengan yang login?
+                        // (Mengambil kolom 'Username' dari Sheet Guru)
+                        if (item.Username === myUsername) {
+                            isMyData = true;
+                        }
+                    } else {
+                        // TAB LAIN (Berita, Galeri, dll):
+                        // Cek apakah 'IDPenulis' (yang menyimpan username pembuat) SAMA dengan yang login?
+                        // Note: Backend menyimpan username di kolom IDPenulis/Penulis
+                        if (item.IDPenulis === myUsername || item.Penulis === myUsername) {
+                            isMyData = true;
+                        }
+                    }
+
+                    // Render Tombol HANYA JIKA isMyData == true
+                    let tombolAksi = '';
+                    if (isMyData) {
+                        tombolAksi = `
+                            <button class="btn btn-sm btn-warning" onclick="editData('${id}')" title="Edit Data Saya"><i class="fas fa-edit"></i></button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteData('${id}')" title="Hapus Data Saya"><i class="fas fa-trash"></i></button>
+                        `;
+                    } else {
+                        // Jika bukan data saya, tampilkan gembok atau kosongkan
+                        tombolAksi = `<span class="badge bg-secondary"><i class="fas fa-lock"></i></span>`;
+                    }
+
                     html += `
                         <tr>
                             <td style="width:80px"><img src="${img}" style="height:50px; width:50px; object-fit:cover" class="rounded-circle"></td>
                             <td>${judul}</td>
                             <td>${info}</td>
-                            <td style="width:150px">
-                                <button class="btn btn-sm btn-warning" onclick="editData('${id}')"><i class="fas fa-edit"></i></button>
-                                <button class="btn btn-sm btn-danger" onclick="deleteData('${id}')"><i class="fas fa-trash"></i></button>
+                            <td style="width:150px" class="text-center">
+                                ${tombolAksi}
                             </td>
                         </tr>
                     `;
@@ -698,7 +731,7 @@
             html += `</tbody></table></div></div>`;
             
             // Render ke layar
-            const oldCard = document.querySelector('#admin-panel .card:not(:first-child)'); // Hindari kartu status user
+            const oldCard = document.querySelector('#admin-panel .card:not(:first-child)'); 
             if(oldCard) oldCard.outerHTML = html;
             else container.insertAdjacentHTML('beforeend', html);
         }
