@@ -567,7 +567,7 @@
 
     <script>
         // --- KONFIGURASI ---
-        const API_URL = 'https://script.google.com/macros/s/AKfycbykk4pfDUaDfSrWh3MwdBMkRdGiVIAvjjuc1nmq1kvdS_7sr3JX_3YJx7fHFboTNPuT/exec'; // <--- PASTIKAN INI BENAR
+        const API_URL = 'https://script.google.com/macros/s/AKfycbxruq15KjoLlt0QZO-BRD6I7ORoARKZ8FB-PS-iKcODWRKHHIL-44rAPsp543oL4Gt-gQ/exec'; // <--- PASTIKAN INI BENAR
 
         let globalData = {};
         
@@ -1029,12 +1029,52 @@
             }
         }
 
+        // --- HELPER KONVERSI LINK GOOGLE DRIVE STANDAR KE DIRECT IMAGE ---
+        function formatDriveImg(url, size = 'w1920') {
+            if (!url) return '';
+            url = String(url).trim();
+
+            // Jika sudah link lh3 / googleusercontent / non-drive, kembalikan langsung
+            if (url.includes('googleusercontent.com') || url.includes('lh3.google')) return url;
+
+            // Ekstrak ID dari format: /file/d/ID_FILE/view... atau /d/ID_FILE
+            const matchPath = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+            if (matchPath && matchPath[1]) {
+                return `https://drive.google.com/thumbnail?id=${matchPath[1]}&sz=${size}`;
+            }
+
+            // Ekstrak ID dari format: ?id=ID_FILE atau &id=ID_FILE
+            const matchParam = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+            if (matchParam && matchParam[1]) {
+                return `https://drive.google.com/thumbnail?id=${matchParam[1]}&sz=${size}`;
+            }
+
+            return url;
+        }
+
         function renderHero(heroData) {
             if(heroData && heroData.length > 0) {
                 const h = heroData[0];
                 document.getElementById('hero-title').innerText = h.Judul;
                 document.getElementById('hero-desc').innerText = h.Deskripsi;
-                if(h.GambarURL) document.querySelector('.hero-section').style.backgroundImage = `url('${h.GambarURL}')`;
+                
+                const heroSection = document.querySelector('.hero-section');
+                const validImages = heroData
+                    .filter(item => item.GambarURL && String(item.GambarURL).trim() !== '')
+                    .map(item => formatDriveImg(item.GambarURL, 'w1920'));
+
+                if (validImages.length > 0) {
+                    heroSection.style.backgroundImage = `url('${validImages[0]}')`;
+
+                    // Jika di sheet Hero ada lebih dari 1 gambar, otomatis berganti tiap 6 detik
+                    if (validImages.length > 1) {
+                        let slideIdx = 0;
+                        setInterval(() => {
+                            slideIdx = (slideIdx + 1) % validImages.length;
+                            heroSection.style.backgroundImage = `url('${validImages[slideIdx]}')`;
+                        }, 6000);
+                    }
+                }
             }
         }
 
